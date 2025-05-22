@@ -1,0 +1,8 @@
+pyzmq
+gymnasium
+numpy
+stable-baselines3[extra] 
+# SB3 extras like Pytorch, etc. Or specify torch directly:
+# torch
+# torchvision 
+# torchaudio
