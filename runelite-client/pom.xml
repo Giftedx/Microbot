@@ -175,6 +175,11 @@
 			<artifactId>rlawt</artifactId>
 			<version>1.5</version>
 		</dependency>
+		<dependency>
+			<groupId>org.zeromq</groupId>
+			<artifactId>jeromq</artifactId>
+			<version>0.5.4</version>
+		</dependency>
 
 		<!-- lwjgl core -->
 		<dependency>
