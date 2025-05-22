@@ -291,4 +291,515 @@ public interface ItemComposition extends ParamHolder
 	 * @return
 	 */
 	int getContrast();
+
+	/**
+	 * Gets the current health of the player.
+	 *
+	 * @return the current health
+	 */
+	int getCurrentHealth();
+
+	/**
+	 * Gets the maximum health of the player.
+	 *
+	 * @return the maximum health
+	 */
+	int getMaxHealth();
+
+	/**
+	 * Gets the current prayer points of the player.
+	 *
+	 * @return the current prayer points
+	 */
+	int getCurrentPrayerPoints();
+
+	/**
+	 * Gets the maximum prayer points of the player.
+	 *
+	 * @return the maximum prayer points
+	 */
+	int getMaxPrayerPoints();
+
+	/**
+	 * Gets the current run energy of the player.
+	 *
+	 * @return the current run energy
+	 */
+	int getCurrentRunEnergy();
+
+	/**
+	 * Gets the maximum run energy of the player.
+	 *
+	 * @return the maximum run energy
+	 */
+	int getMaxRunEnergy();
+
+	/**
+	 * Gets the current special attack energy of the player.
+	 *
+	 * @return the current special attack energy
+	 */
+	int getCurrentSpecialAttackEnergy();
+
+	/**
+	 * Gets the maximum special attack energy of the player.
+	 *
+	 * @return the maximum special attack energy
+	 */
+	int getMaxSpecialAttackEnergy();
+
+	/**
+	 * Gets the current world point of the player.
+	 *
+	 * @return the current world point
+	 */
+	WorldPoint getCurrentWorldPoint();
+
+	/**
+	 * Gets the current local point of the player.
+	 *
+	 * @return the current local point
+	 */
+	LocalPoint getCurrentLocalPoint();
+
+	/**
+	 * Gets the current plane of the player.
+	 *
+	 * @return the current plane
+	 */
+	int getCurrentPlane();
+
+	/**
+	 * Gets the current animation of the player.
+	 *
+	 * @return the current animation
+	 */
+	int getCurrentAnimation();
+
+	/**
+	 * Gets the current graphic of the player.
+	 *
+	 * @return the current graphic
+	 */
+	int getCurrentGraphic();
+
+	/**
+	 * Gets the current facing direction of the player.
+	 *
+	 * @return the current facing direction
+	 */
+	int getCurrentFacingDirection();
+
+	/**
+	 * Gets the current combat level of the player.
+	 *
+	 * @return the current combat level
+	 */
+	int getCurrentCombatLevel();
+
+	/**
+	 * Gets the current total level of the player.
+	 *
+	 * @return the current total level
+	 */
+	int getCurrentTotalLevel();
+
+	/**
+	 * Gets the current experience of the player.
+	 *
+	 * @return the current experience
+	 */
+	long getCurrentExperience();
+
+	/**
+	 * Gets the current quest points of the player.
+	 *
+	 * @return the current quest points
+	 */
+	int getCurrentQuestPoints();
+
+	/**
+	 * Gets the current achievement points of the player.
+	 *
+	 * @return the current achievement points
+	 */
+	int getCurrentAchievementPoints();
+
+	/**
+	 * Gets the current diary points of the player.
+	 *
+	 * @return the current diary points
+	 */
+	int getCurrentDiaryPoints();
+
+	/**
+	 * Gets the current favor points of the player.
+	 *
+	 * @return the current favor points
+	 */
+	int getCurrentFavorPoints();
+
+	/**
+	 * Gets the current slayer points of the player.
+	 *
+	 * @return the current slayer points
+	 */
+	int getCurrentSlayerPoints();
+
+	/**
+	 * Gets the current league points of the player.
+	 *
+	 * @return the current league points
+	 */
+	int getCurrentLeaguePoints();
+
+	/**
+	 * Gets the current bounty points of the player.
+	 *
+	 * @return the current bounty points
+	 */
+	int getCurrentBountyPoints();
+
+	/**
+	 * Gets the current last man standing points of the player.
+	 *
+	 * @return the current last man standing points
+	 */
+	int getCurrentLastManStandingPoints();
+
+	/**
+	 * Gets the current pest control points of the player.
+	 *
+	 * @return the current pest control points
+	 */
+	int getCurrentPestControlPoints();
+
+	/**
+	 * Gets the current soul wars points of the player.
+	 *
+	 * @return the current soul wars points
+	 */
+	int getCurrentSoulWarsPoints();
+
+	/**
+	 * Gets the current castle wars points of the player.
+	 *
+	 * @return the current castle wars points
+	 */
+	int getCurrentCastleWarsPoints();
+
+	/**
+	 * Gets the current trouble brewing points of the player.
+	 *
+	 * @return the current trouble brewing points
+	 */
+	int getCurrentTroubleBrewingPoints();
+
+	/**
+	 * Gets the current barbarian assault points of the player.
+	 *
+	 * @return the current barbarian assault points
+	 */
+	int getCurrentBarbarianAssaultPoints();
+
+	/**
+	 * Gets the current fishing trawler points of the player.
+	 *
+	 * @return the current fishing trawler points
+	 */
+	int getCurrentFishingTrawlerPoints();
+
+	/**
+	 * Gets the current temple trekking points of the player.
+	 *
+	 * @return the current temple trekking points
+	 */
+	int getCurrentTempleTrekkingPoints();
+
+	/**
+	 * Gets the current rogues' den points of the player.
+	 *
+	 * @return the current rogues' den points
+	 */
+	int getCurrentRoguesDenPoints();
+
+	/**
+	 * Gets the current volcanic mine points of the player.
+	 *
+	 * @return the current volcanic mine points
+	 */
+	int getCurrentVolcanicMinePoints();
+
+	/**
+	 * Gets the current hallowed sepulchre points of the player.
+	 *
+	 * @return the current hallowed sepulchre points
+	 */
+	int getCurrentHallowedSepulchrePoints();
+
+	/**
+	 * Gets the current mahogany homes points of the player.
+	 *
+	 * @return the current mahogany homes points
+	 */
+	int getCurrentMahoganyHomesPoints();
+
+	/**
+	 * Gets the current guardians of the rift points of the player.
+	 *
+	 * @return the current guardians of the rift points
+	 */
+	int getCurrentGuardiansOfTheRiftPoints();
+
+	/**
+	 * Gets the current aerial fishing points of the player.
+	 *
+	 * @return the current aerial fishing points
+	 */
+	int getCurrentAerialFishingPoints();
+
+	/**
+	 * Gets the current tithe farm points of the player.
+	 *
+	 * @return the current tithe farm points
+	 */
+	int getCurrentTitheFarmPoints();
+
+	/**
+	 * Gets the current gnome restaurant points of the player.
+	 *
+	 * @return the current gnome restaurant points
+	 */
+	int getCurrentGnomeRestaurantPoints();
+
+	/**
+	 * Gets the current sorceress's garden points of the player.
+	 *
+	 * @return the current sorceress's garden points
+	 */
+	int getCurrentSorceressGardenPoints();
+
+	/**
+	 * Gets the current brimhaven agility arena points of the player.
+	 *
+	 * @return the current brimhaven agility arena points
+	 */
+	int getCurrentBrimhavenAgilityArenaPoints();
+
+	/**
+	 * Gets the current pyramid plunder points of the player.
+	 *
+	 * @return the current pyramid plunder points
+	 */
+	int getCurrentPyramidPlunderPoints();
+
+	/**
+	 * Gets the current shades of mort'ton points of the player.
+	 *
+	 * @return the current shades of mort'ton points
+	 */
+	int getCurrentShadesOfMorttonPoints();
+
+	/**
+	 * Gets the current trouble brewing points of the player.
+	 *
+	 * @return the current trouble brewing points
+	 */
+	int getCurrentTroubleBrewingPoints();
+
+	/**
+	 * Gets the current castle wars points of the player.
+	 *
+	 * @return the current castle wars points
+	 */
+	int getCurrentCastleWarsPoints();
+
+	/**
+	 * Gets the current pest control points of the player.
+	 *
+	 * @return the current pest control points
+	 */
+	int getCurrentPestControlPoints();
+
+	/**
+	 * Gets the current soul wars points of the player.
+	 *
+	 * @return the current soul wars points
+	 */
+	int getCurrentSoulWarsPoints();
+
+	/**
+	 * Gets the current last man standing points of the player.
+	 *
+	 * @return the current last man standing points
+	 */
+	int getCurrentLastManStandingPoints();
+
+	/**
+	 * Gets the current bounty points of the player.
+	 *
+	 * @return the current bounty points
+	 */
+	int getCurrentBountyPoints();
+
+	/**
+	 * Gets the current league points of the player.
+	 *
+	 * @return the current league points
+	 */
+	int getCurrentLeaguePoints();
+
+	/**
+	 * Gets the current slayer points of the player.
+	 *
+	 * @return the current slayer points
+	 */
+	int getCurrentSlayerPoints();
+
+	/**
+	 * Gets the current favor points of the player.
+	 *
+	 * @return the current favor points
+	 */
+	int getCurrentFavorPoints();
+
+	/**
+	 * Gets the current diary points of the player.
+	 *
+	 * @return the current diary points
+	 */
+	int getCurrentDiaryPoints();
+
+	/**
+	 * Gets the current achievement points of the player.
+	 *
+	 * @return the current achievement points
+	 */
+	int getCurrentAchievementPoints();
+
+	/**
+	 * Gets the current quest points of the player.
+	 *
+	 * @return the current quest points
+	 */
+	int getCurrentQuestPoints();
+
+	/**
+	 * Gets the current experience of the player.
+	 *
+	 * @return the current experience
+	 */
+	long getCurrentExperience();
+
+	/**
+	 * Gets the current total level of the player.
+	 *
+	 * @return the current total level
+	 */
+	int getCurrentTotalLevel();
+
+	/**
+	 * Gets the current combat level of the player.
+	 *
+	 * @return the current combat level
+	 */
+	int getCurrentCombatLevel();
+
+	/**
+	 * Gets the current facing direction of the player.
+	 *
+	 * @return the current facing direction
+	 */
+	int getCurrentFacingDirection();
+
+	/**
+	 * Gets the current graphic of the player.
+	 *
+	 * @return the current graphic
+	 */
+	int getCurrentGraphic();
+
+	/**
+	 * Gets the current animation of the player.
+	 *
+	 * @return the current animation
+	 */
+	int getCurrentAnimation();
+
+	/**
+	 * Gets the current plane of the player.
+	 *
+	 * @return the current plane
+	 */
+	int getCurrentPlane();
+
+	/**
+	 * Gets the current local point of the player.
+	 *
+	 * @return the current local point
+	 */
+	LocalPoint getCurrentLocalPoint();
+
+	/**
+	 * Gets the current world point of the player.
+	 *
+	 * @return the current world point
+	 */
+	WorldPoint getCurrentWorldPoint();
+
+	/**
+	 * Gets the maximum special attack energy of the player.
+	 *
+	 * @return the maximum special attack energy
+	 */
+	int getMaxSpecialAttackEnergy();
+
+	/**
+	 * Gets the current special attack energy of the player.
+	 *
+	 * @return the current special attack energy
+	 */
+	int getCurrentSpecialAttackEnergy();
+
+	/**
+	 * Gets the maximum run energy of the player.
+	 *
+	 * @return the maximum run energy
+	 */
+	int getMaxRunEnergy();
+
+	/**
+	 * Gets the current run energy of the player.
+	 *
+	 * @return the current run energy
+	 */
+	int getCurrentRunEnergy();
+
+	/**
+	 * Gets the maximum prayer points of the player.
+	 *
+	 * @return the maximum prayer points
+	 */
+	int getMaxPrayerPoints();
+
+	/**
+	 * Gets the current prayer points of the player.
+	 *
+	 * @return the current prayer points
+	 */
+	int getCurrentPrayerPoints();
+
+	/**
+	 * Gets the maximum health of the player.
+	 *
+	 * @return the maximum health
+	 */
+	int getMaxHealth();
+
+	/**
+	 * Gets the current health of the player.
+	 *
+	 * @return the current health
+	 */
+	int getCurrentHealth();
 }

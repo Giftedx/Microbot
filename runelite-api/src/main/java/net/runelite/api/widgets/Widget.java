@@ -1069,4 +1069,528 @@ public interface Widget
 	 * @param args A ScriptID, then the args for the script
 	 */
 	void setOnVarTransmitListener(Object ...args);
-}
+
+	/**
+	 * Sets a script to be ran when the widget is resized
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnResizeListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is clicked
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnClickListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is held
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnHoldListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is released
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnReleaseListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is dragged
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnDragListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is scrolled
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnScrollListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is hovered
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnHoverListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is unhovered
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUnhoverListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on another widget
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseWithListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on an item
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseItemListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on an NPC
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseNpcListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a player
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUsePlayerListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on an object
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseObjectListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a ground item
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseGroundItemListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a spell
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseSpellListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a prayer
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUsePrayerListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a friend
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseFriendListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on an ignore
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseIgnoreListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatChannelListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberListener(Object... args);
+
+	/**
+	 * Sets a script to be ran when the widget is used on a clan chat member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member channel member
+	 *
+	 * @param args A ScriptID, then the args for the script
+	 */
+	void setOnUseClanChatMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMemberChannelMember

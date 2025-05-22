@@ -183,4 +183,15 @@ public class SpriteManager
 			}
 		});
 	}
+
+	/**
+	 * Updates the sprite overrides for a given set of SpriteOverride objects.
+	 *
+	 * @param overrides the array of SpriteOverride objects to update
+	 */
+	public void updateSpriteOverrides(SpriteOverride[] overrides)
+	{
+		removeSpriteOverrides(overrides);
+		addSpriteOverrides(overrides);
+	}
 }
