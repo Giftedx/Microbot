@@ -37,6 +37,9 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+import net.runelite.api.ObjectComposition;
+import net.runelite.api.gameval.ComponentID;
+import net.runelite.api.gameval.InventoryID;
 
 
 @PluginDescriptor(
@@ -75,7 +78,7 @@ public class AIBridgePlugin extends Plugin {
         observation.put("player_max_health", client.getRealSkillLevel(Skill.HITPOINTS));
         observation.put("player_current_prayer", client.getBoostedSkillLevel(Skill.PRAYER));
         observation.put("player_max_prayer", client.getRealSkillLevel(Skill.PRAYER));
-        observation.put("player_run_energy_percentage", client.getEnergy() / 100.0); // Assuming getEnergy() is 0-10000
+        observation.put("player_run_energy_fraction", client.getEnergy() / 10000.0); // Normalize getEnergy() from 0-10000 to 0-1
 
         Player localPlayer = client.getLocalPlayer();
         if (localPlayer != null) {
@@ -134,8 +137,19 @@ public class AIBridgePlugin extends Plugin {
             Tile[][][] sceneTiles = client.getScene().getTiles();
             int z = client.getPlane();
             if (sceneTiles != null && z >= 0 && z < sceneTiles.length && z < Constants.MAX_Z) { // Added MAX_Z check
-                for (int x = 0; x < Constants.SCENE_SIZE; ++x) {
-                    for (int y = 0; y < Constants.SCENE_SIZE; ++y) {
+                // Calculate player's scene coordinates
+                int playerSceneX = playerPos.getX() - client.getBaseX();
+                int playerSceneY = playerPos.getY() - client.getBaseY();
+                
+                // Calculate boundaries for the loop, ensuring they stay within valid scene bounds
+                int minX = Math.max(0, playerSceneX - range);
+                int maxX = Math.min(Constants.SCENE_SIZE - 1, playerSceneX + range);
+                int minY = Math.max(0, playerSceneY - range);
+                int maxY = Math.min(Constants.SCENE_SIZE - 1, playerSceneY + range);
+                
+                // Only loop over tiles within the player's range
+                for (int x = minX; x <= maxX; ++x) {
+                    for (int y = minY; y <= maxY; ++y) {
                         Tile tile = sceneTiles[z][x][y];
                         if (tile == null) continue;
                         List<TileItem> itemsOnTile = tile.getGroundItems();
@@ -217,12 +231,23 @@ public class AIBridgePlugin extends Plugin {
     @Override
     protected void shutDown() throws Exception {
         log.info("AI Bridge shutting down...");
-        if (listenerThread != null) {
-            listenerThread.interrupt();
-        }
+        
+        // Close socket first to unblock recv() and allow thread to exit cleanly
         if (socket != null) {
             socket.close();
         }
+        
+        if (listenerThread != null) {
+            listenerThread.interrupt();
+            // Give the thread a moment to exit gracefully
+            try {
+                listenerThread.join(1000); // Wait up to 1 second for thread to finish
+            } catch (InterruptedException e) {
+                log.warn("Interrupted while waiting for listener thread to finish");
+                Thread.currentThread().interrupt(); // Restore interrupted status
+            }
+        }
+        
         if (context != null) {
             context.close(); // Use close() for ZContext
         }
@@ -354,13 +379,13 @@ public class AIBridgePlugin extends Plugin {
                     case "interact_inventory":
                         int itemIdToInteract = ((Number) finalParameters.get("item_id")).intValue();
                         String itemAction = (String) finalParameters.getOrDefault("action", "Use");
-                        interactWithInventoryItem(itemIdToInteract, itemAction); // This method logs internally if item not found
+                        interactWithInventoryItem(itemIdToInteract, itemAction);
                         log.info("Submitted interact_inventory: " + itemIdToInteract + " with action: " + itemAction);
                         break;
                     case "click_widget":
                         int widgetId = ((Number) finalParameters.get("widget_id")).intValue();
                         int childId = ((Number) finalParameters.getOrDefault("child_id", -1)).intValue();
-                        clickWidgetWrapper(widgetId, childId); // This method logs internally if widget not found/hidden
+                        clickWidgetWrapper(widgetId, childId);
                         log.info("Submitted click_widget: " + widgetId + (childId != -1 ? "." + childId : ""));
                         break;
                     case "walk_to":
@@ -373,7 +398,7 @@ public class AIBridgePlugin extends Plugin {
                         break;
                     case "interact_ground_item":
                         int itemIdToPickup = ((Number) finalParameters.get("item_id")).intValue();
-                        interactWithGroundItem(itemIdToPickup, finalParameters); // Pass the whole parameters map
+                        interactWithGroundItem(itemIdToPickup, finalParameters);
                         log.info("Submitted interact_ground_item for item ID: " + itemIdToPickup);
                         break;
                     case "invoke_menu_action_detailed":
@@ -387,7 +412,8 @@ public class AIBridgePlugin extends Plugin {
                         if (finalParameters.containsKey("force_left_click") && finalParameters.get("force_left_click") instanceof Boolean) {
                             forceLeftClick = (Boolean) finalParameters.get("force_left_click");
                         }
-                        client.invokeMenuAction(option, targetDetailedName, idDetailed, opcodeDetailed, param0Detailed, param1Detailed, forceLeftClick);
+                        MenuAction menuAction = MenuAction.of(opcodeDetailed);
+                        client.menuAction(param0Detailed, param1Detailed, menuAction, idDetailed, -1, option, targetDetailedName);
                         log.info("Executed invoke_menu_action_detailed: option=" + option + ", target=" + targetDetailedName + ", id=" + idDetailed + ", opcode=" + opcodeDetailed + ", param0=" + param0Detailed + ", param1=" + param1Detailed + ", forceLeftClick=" + forceLeftClick);
                         break;
                     // No default here as unknown action_types are caught before clientThread.invoke
@@ -475,37 +501,44 @@ public class AIBridgePlugin extends Plugin {
     private void interactWithNpc(NPC npc, String action) {
         final String targetName = npc.getName() != null ? npc.getName() : "NPC";
         // The opcode for NPC interactions can vary. NPC_FIRST_OPTION to NPC_FIFTH_OPTION,
-        // or specific ones like ATTACK_NPC. For a generic 'Attack', ATTACK_NPC might be best.
-        // However, to match the menu, finding the action string is more robust.
-        // For now, using a common MenuAction.
+        // or specific ones like NPC_SECOND_OPTION for Attack.
         MenuAction menuAction = MenuAction.NPC_FIRST_OPTION; // Default
-        if ("Attack".equalsIgnoreCase(action)) { // Example for specific action
-            menuAction = MenuAction.NPC_ATTACK;
+        if ("Attack".equalsIgnoreCase(action)) {
+            menuAction = MenuAction.NPC_SECOND_OPTION; // Attack is typically second option
         }
-        // param0 is npc.getIndex(), param1 is worldX, param2 is worldY (not always used directly by invokeMenuAction)
-        // invokeMenuAction will use the menuEntry's params.
-        MenuEntry menuEntry = client.createMenuEntry(action, targetName, npc.getId(), menuAction.getId(), npc.getIndex(), npc.getWorldLocation().getX(), npc.getWorldLocation().getY(), false);
-        client.invokeMenuAction(menuEntry.getOption(), menuEntry.getTarget(), menuEntry.getIdentifier(), menuEntry.getOpcode(), menuEntry.getParam0(), menuEntry.getParam1());
+        
+        // Use the correct client.menuAction API
+        client.menuAction(npc.getIndex(), 0, menuAction, npc.getId(), -1, action, targetName);
         log.info("Attempted interaction with NPC " + npc.getId() + " (" + targetName + "), Action: " + action + ", Opcode: " + menuAction.getId());
     }
 
     private void interactWithTileObject(TileObject tileObject, String action) {
-        final String targetName = tileObject.getName() != null ? tileObject.getName() : "<col=ffff>" + tileObject.getId();
+        // Get object name through ObjectComposition
+        String targetName = null;
+        ObjectComposition objectComp = client.getObjectDefinition(tileObject.getId());
+        if (objectComp != null) {
+            targetName = objectComp.getName();
+        }
+        if (targetName == null || targetName.trim().isEmpty() || targetName.equals("null")) {
+            targetName = "<col=ffff>" + tileObject.getId();
+        }
+        
         MenuAction menuActionType = MenuAction.GAME_OBJECT_FIRST_OPTION; // Default
 
         if (tileObject instanceof GameObject) {
             menuActionType = MenuAction.GAME_OBJECT_FIRST_OPTION; // Or SECOND, THIRD etc. based on 'action'
         } else if (tileObject instanceof WallObject) {
-            menuActionType = MenuAction.WALL_OBJECT_FIRST_OPTION;
+            menuActionType = MenuAction.GAME_OBJECT_FIRST_OPTION; // WallObject uses same actions as GameObject
         } else if (tileObject instanceof GroundObject) {
-            menuActionType = MenuAction.GROUND_OBJECT_FIRST_OPTION;
+            menuActionType = MenuAction.GAME_OBJECT_FIRST_OPTION; // GroundObject uses same actions as GameObject  
         } else if (tileObject instanceof DecorativeObject) {
-            menuActionType = MenuAction.DECORATIVE_OBJECT_FIRST_OPTION;
+            menuActionType = MenuAction.GAME_OBJECT_FIRST_OPTION; // DecorativeObject uses same actions as GameObject
         }
-        // params for objects: sceneX, sceneY, id
-        MenuEntry menuEntry = client.createMenuEntry(action, targetName, tileObject.getId(), menuActionType.getId(), tileObject.getLocalLocation().getSceneX(), tileObject.getLocalLocation().getSceneY(), false);
-        client.invokeMenuAction(menuEntry.getOption(), menuEntry.getTarget(), menuEntry.getIdentifier(), menuEntry.getOpcode(), menuEntry.getParam0(), menuEntry.getParam1());
-        log.info("Attempted interaction with TileObject " + tileObject.getId() + ", Action: " + action + ", Opcode: " + menuActionType.getId());
+        
+        // Use the correct client.menuAction API
+        client.menuAction(tileObject.getLocalLocation().getSceneX(), tileObject.getLocalLocation().getSceneY(), 
+                         menuActionType, tileObject.getId(), -1, action, targetName);
+        log.info("Attempted interaction with TileObject " + tileObject.getId() + " (" + targetName + "), Action: " + action + ", Opcode: " + menuActionType.getId());
     }
 
     private void interactWithInventoryItem(int itemId, String action) {
@@ -525,14 +558,24 @@ public class AIBridgePlugin extends Plugin {
             }
         }
         if (itemToInteract != null) {
-            String targetName = itemToInteract.getName() != null ? itemToInteract.getName() : "Item"; // ItemComposition could provide name
-            MenuAction menuAction = MenuAction.ITEM_FIRST_OPTION; // Default. Could be ITEM_USE, etc.
-            // For inventory items, param0 is itemSlot, param1 is widgetId (packed)
-            MenuEntry menuEntry = client.createMenuEntry(action, targetName, itemId, menuAction.getId(), itemSlot, WidgetInfo.INVENTORY.getId(), false);
-            client.invokeMenuAction(menuEntry.getOption(), menuEntry.getTarget(), menuEntry.getIdentifier(), menuEntry.getOpcode(), menuEntry.getParam0(), menuEntry.getParam1());
-            log.info("Attempted interaction with Item " + itemId + " in slot " + itemSlot + ", Action: " + action + ", Opcode: " + menuAction.getId());
+            // Get item name through ItemComposition
+            String targetName = null;
+            ItemComposition itemComp = client.getItemDefinition(itemToInteract.getId());
+            if (itemComp != null) {
+                targetName = itemComp.getName();
+            }
+            if (targetName == null || targetName.trim().isEmpty()) {
+                targetName = "Item " + itemToInteract.getId();
+            }
+            
+            // Use CC_OP for component operations (inventory items)
+            MenuAction menuAction = MenuAction.CC_OP;
+            
+            // Use the correct client.menuAction API
+            client.menuAction(itemSlot, InventoryID.INVENTORY_CONTAINER, menuAction, 1, itemToInteract.getId(), action, targetName);
+            log.info("Attempted interaction with inventory item " + itemToInteract.getId() + " (" + targetName + "), Action: " + action + ", Slot: " + itemSlot);
         } else {
-            log.warn("Item " + itemId + " not found in inventory for interaction.");
+            log.warn("Item with ID " + itemId + " not found in inventory");
         }
     }
 
@@ -649,17 +692,17 @@ public class AIBridgePlugin extends Plugin {
 
         if (targetItem != null) {
             String action = "Take"; // Default action
-            String targetName = targetItem.getName(); // May be null
-            if (targetName == null || targetName.trim().isEmpty()) {
-                ItemComposition itemComp = client.getItemDefinition(targetItem.getId());
-                if (itemComp != null) targetName = itemComp.getName();
+            String targetName = null;
+            ItemComposition itemComp = client.getItemDefinition(targetItem.getId());
+            if (itemComp != null) {
+                targetName = itemComp.getName();
             }
             if (targetName == null || targetName.trim().isEmpty()) targetName = "Item";
 
 
             log.info("Attempting to " + action + " item: " + targetItem.getId() + " (" + targetName + ") at " + targetItem.getTile().getWorldLocation());
-            MenuEntry menuEntry = client.createMenuEntry(action, targetName, targetItem.getId(), MenuAction.GROUND_ITEM_THIRD_OPTION.getId(), targetItem.getTile().getLocalLocation().getSceneX(), targetItem.getTile().getLocalLocation().getSceneY(), false);
-            client.invokeMenuAction(action, targetName, targetItem.getId(), MenuAction.GROUND_ITEM_THIRD_OPTION.getId(), menuEntry.getParam0(), menuEntry.getParam1());
+            MenuEntry menuEntry = client.createMenuEntry(action, targetName, targetItem.getId(), MenuAction.GROUND_ITEM_FIRST_OPTION.getId(), targetItem.getTile().getLocalLocation().getSceneX(), targetItem.getTile().getLocalLocation().getSceneY(), false);
+            client.invokeMenuAction(action, targetName, targetItem.getId(), MenuAction.GROUND_ITEM_FIRST_OPTION.getId(), menuEntry.getParam0(), menuEntry.getParam1());
         } else {
             log.warn("Ground item with ID " + itemId + " not found for interaction.");
         }

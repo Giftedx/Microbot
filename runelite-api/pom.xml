@@ -146,6 +146,7 @@
 <!--					<sourcepath>${project.build.directory}/delombok;${project.build.directory}/generated-sources</sourcepath>-->
 <!--				</configuration>-->
 <!--			</plugin>-->
+			<!--
 			<plugin>
 				<groupId>net.runelite</groupId>
 				<artifactId>runelite-maven-plugin</artifactId>
@@ -163,6 +164,7 @@
 					</execution>
 				</executions>
 			</plugin>
+			-->
 		</plugins>
 	</build>
 </project>
