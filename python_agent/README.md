@@ -55,6 +55,7 @@ All responses from the Java plugin are JSON strings.
       "player_current_prayer": int,
       "player_max_prayer": int,
       "player_run_energy_percentage": float, // 0.0 to 1.0
+      "player_animation": int, // Player's current animation ID (-1 if none)
       "player_location": {"x": int, "y": int, "plane": int} or null,
       "nearby_npcs": [ // List, up to MAX_NEARBY_NPCS (e.g., 3)
         {"id": int, "name": "string", "animation": int, "location": {"x": int, "y": int, "plane": int}}, 
@@ -125,4 +126,22 @@ All responses from the Java plugin are JSON strings.
 -   `train_agent.py`: Example script to train a Stable Baselines3 PPO agent using `CustomGameEnv`.
 -   `requirements.txt`: Python dependencies.
 
+## Example Task: Simple Combat Agent
+
+The `custom_env.py` is currently configured to train an agent for a simple combat task.
+
+**Goal:** Attack Goblins near Lumbridge while maintaining health by eating food.
+
+**Key Configuration Constants (in `custom_env.py`):**
+- `GOBLIN_NPC_ID`: The specific NPC ID for the Goblins to target (e.g., 125).
+- `FOOD_ITEM_IDS`: A list of item IDs considered as food (e.g., [315, 2140, 2309] for Shrimp, Chicken, Bread).
+- `EAT_HEALTH_THRESHOLD_PERCENTAGE`: Health percentage below which the agent considers eating (e.g., 0.6 for 60%).
+- `GOBLIN_AREA_WAYPOINTS`: Predefined coordinates for the agent to patrol if no goblins are nearby.
+
+**Combat Task Action Space Interpretation:**
+The `CustomGameEnv` currently uses a `spaces.Discrete(4)` action space for this task:
+- `0`: **ATTACK_NPC**: Attempts to find and attack a nearby NPC matching `GOBLIN_NPC_ID`.
+- `1`: **EAT_FOOD**: Attempts to eat a food item from `FOOD_ITEM_IDS` if health is below `EAT_HEALTH_THRESHOLD_PERCENTAGE`.
+- `2`: **MOVE_TO_GOBLIN_AREA**: Moves to a predefined waypoint in the goblin area.
+- `3`: **NOOP**: No game action is taken.
 ```

@@ -11,6 +11,21 @@ MAX_INVENTORY_ITEMS = 5
 MAX_GROUND_ITEMS = 5 # New constant
 BONE_ITEM_ID = 526 # Example ID for Bones
 
+# --- Task-Specific Constants for Simple Combat Agent ---
+GOBLIN_NPC_ID = 125  # Example ID for a common Goblin
+FOOD_ITEM_IDS = [315, 2140, 2309]  # Cooked Shrimp, Cooked Chicken, Bread
+EAT_HEALTH_THRESHOLD_PERCENTAGE = 0.6 # Eat if health is <= 60% of max health
+# Example waypoints near Lumbridge Goblins (east of river, south of castle)
+GOBLIN_AREA_WAYPOINTS = [
+    (3248, 3237, 0), # Approximate
+    (3252, 3230, 0), # Approximate
+    (3245, 3224, 0)  # Approximate
+]
+# --- End Task-Specific Constants ---
+
+# Define known combat animations (example IDs, replace with actual ones)
+PLAYER_COMBAT_ANIMATION_IDS = [422, 423, 390, 393, 386, 80, 819, 1658] # Common melee/ranged/magic attack animations
+
 class CustomGameEnv(gym.Env):
     metadata = {'render_modes': ['human', 'rgb_array'], 'render_fps': 4}
 
@@ -18,19 +33,25 @@ class CustomGameEnv(gym.Env):
         super().__init__()
         self.client = ZMQClient()
 
-        # 0:type, 1:attack_goblin, 2:interact_door, 3:walk_lumbridge, 4:noop, 5:pickup_bone
-        # New: 6: invoke_menu_action_detailed (example: click first inventory slot)
-        self.action_space = spaces.Discrete(7) 
+        # Action Space: 0:ATTACK_NPC, 1:EAT_FOOD, 2:MOVE_TO_GOBLIN_AREA, 3:NOOP
+        self.action_space = spaces.Discrete(4) 
 
-        self.observation_space = spaces.Dict({
-            "player_stats": spaces.Box(low=0, high=np.array([200, 200, 200, 200, 1.0]), dtype=np.float32),
-            "player_location": spaces.Box(low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32),
-            "nearby_npcs_info": spaces.Box(low=-1, high=np.inf, shape=(MAX_NEARBY_NPCS, 4), dtype=np.float32), # id, x, y, anim
+        self.observation_space = spaces.Dict({ 
+            "player_stats": spaces.Box(low=0, high=np.array([200, 200, 200, 200, 1.0]), dtype=np.float32), # cur_hp,max_hp,cur_pray,max_pray,run_energy
+            "player_location": spaces.Box(low=-np.inf, high=np.inf, shape=(3,), dtype=np.float32), # x,y,plane
+            "nearby_npcs_info": spaces.Box(low=-1, high=np.inf, shape=(MAX_NEARBY_NPCS, 4), dtype=np.float32), # id,x,y,anim
             "inventory_item_ids": spaces.Box(low=-1, high=np.inf, shape=(MAX_INVENTORY_ITEMS,), dtype=np.float32), # id
-            "nearby_ground_items_info": spaces.Box(low=-1, high=np.inf, shape=(MAX_GROUND_ITEMS, 4), dtype=np.float32), # id, quantity, x, y
+            "nearby_ground_items_info": spaces.Box(low=-1, high=np.inf, shape=(MAX_GROUND_ITEMS, 4), dtype=np.float32),#id,q,x,y
+            "player_animation": spaces.Box(low=-1, high=np.inf, shape=(1,), dtype=np.int32) # New player animation ID
         })
         
-        self._current_game_info = {} # Initialize to ensure it exists
+        self._current_game_info = {} 
+        self.last_observation = None 
+        
+        self.current_target_npc_id = None 
+        self.waypoint_index = 0
+        self._update_combat_state_from_obs(None) # Initialize combat state
+
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
 
@@ -40,10 +61,11 @@ class CustomGameEnv(gym.Env):
         
         obs = {
             "player_stats": np.zeros(self.observation_space["player_stats"].shape, dtype=np.float32),
-            "player_location": np.zeros(self.observation_space["player_location"].shape, dtype=np.float32),
+            "player_location": np.full(self.observation_space["player_location"].shape, 0.0, dtype=np.float32),
             "nearby_npcs_info": np.full(self.observation_space["nearby_npcs_info"].shape, -1.0, dtype=np.float32),
             "inventory_item_ids": np.full(self.observation_space["inventory_item_ids"].shape, -1.0, dtype=np.float32),
             "nearby_ground_items_info": np.full(self.observation_space["nearby_ground_items_info"].shape, -1.0, dtype=np.float32),
+            "player_animation": np.full(self.observation_space["player_animation"].shape, -1, dtype=np.int32) # New
         }
         # Initialize parts of the info dictionary that will be populated here
         self._current_game_info = {
@@ -68,6 +90,7 @@ class CustomGameEnv(gym.Env):
             obs["player_stats"][2] = float(raw_obs_data.get("player_current_prayer", 0))
             obs["player_stats"][3] = float(raw_obs_data.get("player_max_prayer", 0))
             obs["player_stats"][4] = float(raw_obs_data.get("player_run_energy_percentage", 0.0))
+            obs["player_animation"][0] = int(raw_obs_data.get("player_animation", -1)) # New
 
             # Player Location
             player_loc_data = raw_obs_data.get("player_location", {}) # Default to empty dict if null
@@ -120,8 +143,11 @@ class CustomGameEnv(gym.Env):
         
         except (TypeError, ValueError) as e:
             print(f"Warning: Type or value error while processing observation data: {e}. Raw data: {raw_obs_data}. Using partially processed/default observation.")
+            # Ensure player_animation also has a default if error occurs mid-parse
+            obs["player_animation"][0] = -1
         except Exception as e:
             print(f"Warning: Unexpected error while processing observation data: {e}. Raw data: {raw_obs_data}. Using partially processed/default observation.")
+            obs["player_animation"][0] = -1
             
         return obs
 
@@ -130,108 +156,249 @@ class CustomGameEnv(gym.Env):
         # It contains raw_observation and parsed names.
         return self._current_game_info
 
+    def _update_combat_state_from_obs(self, current_observation):
+        if current_observation and current_observation.get("player_animation") is not None:
+            current_player_anim = current_observation["player_animation"][0]
+            self.player_is_in_combat_animation = current_player_anim in PLAYER_COMBAT_ANIMATION_IDS
+            # Could also update self.current_target_npc_id here if player is targeting an NPC
+            # For example, if player_is_interacting_with_npc_id is part of observation
+        else:
+            self.player_is_in_combat_animation = False
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
-        # For now, reset doesn't do much with the game, just gets an observation
-        # In a real scenario, this might trigger a game reset action via ZMQ
         print("Environment reset.")
-        self.last_observation = self._get_obs() # Initial observation
-        info = self._get_info()
-        return self.last_observation, info
+        initial_observation = self._get_obs() 
+        self._update_combat_state_from_obs(initial_observation) # Call the new method
+        self.last_observation = initial_observation
+        info = self._get_info() 
+        return initial_observation, info
 
     def step(self, action):
+        base_action_cost = -0.1 # Default cost for taking a step
         action_type = None
         parameters = {}
-        reward = -0.1 # Small cost for taking any action (encourages efficiency)
-        terminated = False 
-        
-        bones_visible_in_last_obs = False # Default for action 5 reward logic
+        action_specific_reward_info = {} # To pass data to reward function
 
-        if action == 0: # type_string
-            action_type = "type_string"
-            parameters = {"text": "Hello AI from Gym Env"}
-        elif action == 1: # attack_npc (e.g., Goblin ID 1610)
-            action_type = "attack_npc"
-            parameters = {"npc_id": 1610} 
-        elif action == 2: # interact_object (e.g., a Door ID 16465)
-            action_type = "interact_object"
-            parameters = {"object_id": 16465, "action": "Open"}
-        elif action == 3: # walk_to (e.g., Lumbridge center)
-            action_type = "walk_to"
-            parameters = {"x": 3222, "y": 3222, "plane": 0}
-        elif action == 4: # noop
-            action_type = None 
-            reward = 0.0 # No penalty for no-op, or small positive if desired
-        elif action == 5: # pickup_bone
-            action_type = "interact_ground_item"
-            parameters = {"item_id": BONE_ITEM_ID}
-            
-            if hasattr(self, 'last_observation') and self.last_observation:
-                for i in range(MAX_GROUND_ITEMS):
-                    if self.last_observation["nearby_ground_items_info"][i, 0] == BONE_ITEM_ID:
-                        bones_visible_in_last_obs = True
-                        # Example of targeting specific bone if API supported it and it was desired:
-                        # parameters["x"] = int(self.last_observation["nearby_ground_items_info"][i, 2])
-                        # parameters["y"] = int(self.last_observation["nearby_ground_items_info"][i, 3])
-                        # parameters["plane"] = int(self.last_observation["player_location"][2])
-                        break
-            
-            if bones_visible_in_last_obs:
-                print(f"Env Action: Attempting to pick up Bone (ID: {BONE_ITEM_ID}) based on last observation.")
-            else:
-                print(f"Env Action: Pick up Bone chosen, but no bones were noted in last observation.")
-                action_type = None 
-                reward = -1.0 
-        
-        elif action == 6: # invoke_menu_action_detailed (Example: Click first inventory slot)
-            action_type = "invoke_menu_action_detailed"
-            widget_inventory_packed_id = (149 << 16) | 0 
-            
-            parameters = {
-                "option": "Use", 
-                "target": "", # Typically item name, but can be empty for some slot actions
-                "id": -1,     # Often item ID in slot, or -1 if not applicable to action/widget
-                "opcode": 57, # MenuAction.CC_OP (57)
-                "param0": 0,  # Slot index
-                "param1": widget_inventory_packed_id, 
-                "force_left_click": True 
-            }
-            print(f"Env Action: Detailed menu invocation on first inventory slot (example).")
-
+        # --- Action Selection and Parameter Generation ---
+        if action == 0: # ATTACK_NPC
+            action_type, parameters, action_specific_reward_info = self._handle_attack_npc(self.last_observation)
+        elif action == 1: # EAT_FOOD
+            action_type, parameters, action_specific_reward_info = self._handle_eat_food(self.last_observation)
+        elif action == 2: # MOVE_TO_GOBLIN_AREA
+            action_type = "walk_to" # This one is simpler, can define params directly or use a helper
+            selected_waypoint = GOBLIN_AREA_WAYPOINTS[self.waypoint_index % len(GOBLIN_AREA_WAYPOINTS)]
+            parameters = {"x": selected_waypoint[0], "y": selected_waypoint[1], "plane": selected_waypoint[2]}
+            self.waypoint_index += 1
+            action_specific_reward_info = {"action_taken": "move_to_waypoint"}
+            print(f"Env Action: Move to waypoint {selected_waypoint}")
+        elif action == 3: # NOOP
+            action_type = None # No action sent to game
+            action_specific_reward_info = {"action_taken": "noop"}
+            print(f"Env Action: NOOP")
         else:
             print(f"Unknown action discrete value: {action}")
-            action_type = None
-            reward = -1.0
+            action_specific_reward_info = {"action_taken": "unknown"}
         
+        # --- Execute Action via ZMQ ---
         action_status = {"status": "no_action_taken"}
         if action_type:
             action_status = self.client.execute_action(action_type, parameters)
             print(f"Action result from server: {action_status}")
-            if action_status and action_status.get("status") == "submitted":
-                if action == 5 and bones_visible_in_last_obs: 
-                    reward += 10.0 
-                elif action == 5 and not bones_visible_in_last_obs: 
-                     pass 
-                else: 
-                    reward += 0.1 
-            else: 
-                if action_type : 
-                     reward -= 0.5
         
-        self.last_observation = self._get_obs() 
+        # --- Get New Observation and Info ---
+        current_observation = self._get_obs() 
+        self._update_combat_state_from_obs(current_observation) # Call the new method
+        self.last_observation = current_observation 
         info = self._get_info() 
         info["action_status"] = action_status
+        info.update(action_specific_reward_info) # Add info from action handling
 
-        # Example termination condition (e.g., if player health drops to 0)
-        # current_health = observation["player_stats"][0] # Accessing from Dict observation
-        # if current_health <= 0:
-        #    terminated = True
-        #    reward = -100 # Large penalty for dying
+        # --- Calculate Reward ---
+        reward = self._calculate_reward(base_action_cost, action_specific_reward_info, 
+                                        self.last_observation, current_observation, 
+                                        action_status, action)
+        
+        # --- Update State ---
+        # self.last_observation is already updated above
+        # self.player_is_in_combat_animation is already updated above
 
-        # For now, episodes don't terminate based on game state in this basic setup
-        truncated = False 
-        return observation, reward, terminated, truncated, info
+        terminated = False # Placeholder for death condition
+        if current_observation["player_stats"][0] <= 0: # current_health
+             terminated = True
+             print("Player died. Episode terminated.")
+        
+        truncated = False # Placeholder for time limits, etc.
+        
+        return current_observation, reward, terminated, truncated, info
+
+    # In class CustomGameEnv (ensure these are methods of the class):
+    def _handle_attack_npc(self, last_observation):
+        if not last_observation:
+            print("Attack: No last_observation available.")
+            return None, {}, {"attack_attempted": False, "error": "Missing last_observation"}
+
+        player_loc_data = last_observation.get("player_location")
+        # Check if player_loc_data is None or any of its crucial elements are None (assuming x,y,plane are at 0,1,2)
+        if player_loc_data is None or \
+           player_loc_data[0] is None or player_loc_data[1] is None or player_loc_data[2] is None or \
+           player_loc_data[0] == 0.0 and player_loc_data[1] == 0.0: # Default/uninitialized check
+             print("Attack: Player location not available or uninitialized in last_observation.")
+             return None, {}, {"attack_attempted": False, "error": "Player location missing or uninitialized"}
+
+
+        nearby_npcs = last_observation.get("nearby_npcs_info")
+        if nearby_npcs is None:
+            print("Attack: No NPC info in last_observation.")
+            return None, {}, {"attack_attempted": False, "error": "NPC info missing"}
+
+        # --- Player Animation for combat state ---
+        # self.player_is_in_combat_animation should be updated in step() method after new obs.
+        # For now, we'll simplify and not use it directly to gate re-attacking.
+
+        best_target_goblin_id = None
+        min_dist_sq = float('inf') # Use squared distance to avoid sqrt
+        
+        player_x, player_y, player_plane = player_loc_data[0], player_loc_data[1], player_loc_data[2]
+
+        for i in range(MAX_NEARBY_NPCS):
+            npc_id = nearby_npcs[i, 0]
+            npc_x = nearby_npcs[i, 1]
+            npc_y = nearby_npcs[i, 2]
+            # npc_anim = nearby_npcs[i, 3] # NPC animation (could be used to check if already dead/fighting)
+
+            if npc_id == GOBLIN_NPC_ID:
+                # Basic check: is NPC data valid (not -1 padding)?
+                if npc_x != -1 and npc_y != -1: # Assuming NPCs are on the same plane as player
+                    dist_sq = (player_x - npc_x)**2 + (player_y - npc_y)**2
+                    if dist_sq < min_dist_sq:
+                        min_dist_sq = dist_sq
+                        best_target_goblin_id = int(npc_id)
+        
+        if best_target_goblin_id is not None:
+            # Simple logic: always try to attack if a goblin is found.
+            # More complex: check if self.current_target_npc_id == best_target_goblin_id and self.player_is_in_combat_animation
+            # For now, if we found a goblin, we set it as current target and attempt attack.
+            self.current_target_npc_id = best_target_goblin_id 
+            print(f"Attack: Found Goblin (ID: {best_target_goblin_id}). Min distance: {min_dist_sq**0.5:.2f}")
+            return "attack_npc", {"npc_id": best_target_goblin_id}, {"attack_attempted": True, "target_id": best_target_goblin_id}
+        else:
+            print("Attack: No suitable Goblin found nearby.")
+            self.current_target_npc_id = None
+        return None, {}, {"attack_attempted": False, "error": "No suitable goblin found"}
+
+    def _handle_eat_food(self, last_observation):
+        if not last_observation:
+            print("Eat Food: No last_observation available.")
+            return None, {}, {"eat_attempted": False, "error": "Missing last_observation"}
+
+        player_stats = last_observation.get("player_stats")
+        if player_stats is None or len(player_stats) < 2: # Need at least current and max health
+            print("Eat Food: Player stats not available or incomplete in last_observation.")
+            return None, {}, {"eat_attempted": False, "error": "Player stats missing or incomplete"}
+
+        current_health = player_stats[0]
+        max_health = player_stats[1]
+
+        if max_health <= 0: # Avoid division by zero if max_health isn't loaded correctly
+            print("Eat Food: Max health is zero or invalid.")
+            return None, {}, {"eat_attempted": False, "error": "Invalid max_health"}
+            
+        should_eat = (current_health / max_health) <= EAT_HEALTH_THRESHOLD_PERCENTAGE
+        
+        if not should_eat:
+            # print(f"Eat Food: Health {current_health}/{max_health} is above threshold {EAT_HEALTH_THRESHOLD_PERCENTAGE*100}%. No need to eat.")
+            return None, {}, {"eat_attempted": False, "status": "Health sufficient"}
+
+        inventory_item_ids = last_observation.get("inventory_item_ids")
+        if inventory_item_ids is None:
+            print("Eat Food: Inventory info not available in last_observation.")
+            return None, {}, {"eat_attempted": False, "error": "Inventory info missing"}
+
+        found_food_id = None
+        for i in range(MAX_INVENTORY_ITEMS):
+            item_id = inventory_item_ids[i]
+            if item_id != -1 and int(item_id) in FOOD_ITEM_IDS: # Ensure item_id is not padding and is in our list
+                found_food_id = int(item_id)
+                break 
+        
+        if found_food_id is not None:
+            print(f"Eat Food: Health {current_health}/{max_health} is low. Found food (ID: {found_food_id}). Attempting to eat.")
+            # Action string "Eat" is common. Some items might use "Consume".
+            # The Java plugin's interactWithInventoryItem needs to handle this.
+            return "interact_inventory", {"item_id": found_food_id, "action": "Eat"}, {"eat_attempted": True, "food_id": found_food_id}
+        else:
+            print(f"Eat Food: Health {current_health}/{max_health} is low, but no suitable food found in inventory.")
+            return None, {}, {"eat_attempted": False, "error": "No food found"}
+
+    def _calculate_reward(self, base_action_cost, action_specific_reward_info, 
+                          prev_obs, current_obs, action_status, action_taken):
+        reward = base_action_cost
+
+        # --- Penalties for Action Failures/Context Errors ---
+        if action_status.get("status") == "error": # Error from Java plugin or ZMQ
+            reward -= 0.5
+            print(f"Reward: Penalized for action error: {action_status.get('message')}")
+        elif action_status.get("status") == "no_action_taken" and action_taken != 3: # Action was chosen but handler decided not to act (and not NOOP)
+            # Check specific errors from handlers if available in action_specific_reward_info
+            if action_specific_reward_info.get("error") == "No suitable goblin found" and action_taken == 0:
+                reward -= 0.5 # Tried to attack when no goblin was found by handler
+                print("Reward: Penalized for trying to attack with no suitable goblin.")
+            elif action_specific_reward_info.get("error") == "No food found" and action_taken == 1:
+                reward -= 0.3 # Tried to eat but no food
+                print("Reward: Penalized for trying to eat with no food.")
+            elif action_specific_reward_info.get("status") == "Health sufficient" and action_taken == 1:
+                reward -= 0.3 # Tried to eat when health was high
+                print("Reward: Penalized for trying to eat with sufficient health.")
+            # Add more specific penalties based on action_specific_reward_info if needed
+
+        # --- Rewards/Penalties based on Action Type and Outcome ---
+        if action_status.get("status") == "submitted":
+            reward += 0.1 # Small base reward for any successfully submitted action
+
+            if action_taken == 0: # ATTACK_NPC
+                if action_specific_reward_info.get("attack_attempted"):
+                    reward += 0.5  # Successfully submitted an attack command
+                    print("Reward: Bonus for submitting attack.")
+                    # TODO (Advanced): Check if target NPC health decreased in current_obs vs prev_obs
+                    # This would require adding NPC health to observation or having a way to query it.
+                    # For now, this simple reward for submission is a starting point.
+
+            elif action_taken == 1: # EAT_FOOD
+                if action_specific_reward_info.get("eat_attempted"):
+                    # Check if health actually increased (requires prev_obs to be valid)
+                    if prev_obs and prev_obs.get("player_stats") is not None and \
+                       current_obs.get("player_stats") is not None and \
+                       len(prev_obs["player_stats"]) > 0 and len(current_obs["player_stats"]) > 0 and \
+                       current_obs["player_stats"][0] > prev_obs["player_stats"][0]:
+                        health_increase = current_obs["player_stats"][0] - prev_obs["player_stats"][0]
+                        reward += health_increase * 0.5 # Reward proportional to healing, e.g., 5.0 for 10 hp
+                        print(f"Reward: Bonus for eating and increasing health by {health_increase}.")
+                    else:
+                        # Submitted eat command, but health didn't increase (e.g., already full, non-food, or lag)
+                        reward -= 0.1 # Small penalty or just remove the submission bonus
+                        print("Reward: Eat submitted, but no health increase observed.")
+            
+            elif action_taken == 2: # MOVE_TO_GOBLIN_AREA
+                reward += 0.05 # Small bonus for moving, already got 0.1 for submission
+                print("Reward: Bonus for moving to waypoint.")
+
+        # --- NOOP Action (action_taken == 3) ---
+        if action_taken == 3: # NOOP
+            # If base_action_cost is -0.1, this effectively makes NOOP cost 0 if we add 0.1
+            # Or, set reward directly:
+            reward = 0.0 # NOOPs are neutral or very slightly negative if preferred
+            print("Reward: NOOP action, neutral reward.")
+
+
+        # --- Major Penalty for Death ---
+        if current_obs.get("player_stats") is not None and len(current_obs["player_stats"]) > 0 and \
+           current_obs["player_stats"][0] <= 0: # Current health is 0 or less
+            reward = -100.0 # Large penalty for dying
+            print("Reward: Large penalty for player death.")
+            
+        print(f"Final Reward for step: {reward}")
+        return reward
 
     def render(self):
         if self.render_mode == "human":
@@ -265,7 +432,7 @@ if __name__ == '__main__':
     env.render()
     
     # Test a few steps
-    for i in range(7): # Test all 7 actions
+    for i in range(4): # Test all 4 new actions
         action = i 
         print(f"\n--- Step {i+1}, Taking Action: {action} ---")
         obs, reward, terminated, truncated, info = env.step(action)

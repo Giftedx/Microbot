@@ -79,6 +79,7 @@ public class AIBridgePlugin extends Plugin {
 
         Player localPlayer = client.getLocalPlayer();
         if (localPlayer != null) {
+            observation.put("player_animation", localPlayer.getAnimation());
             WorldPoint playerLocation = localPlayer.getWorldLocation();
             Map<String, Integer> locationMap = new HashMap<>();
             locationMap.put("x", playerLocation.getX());
@@ -86,6 +87,7 @@ public class AIBridgePlugin extends Plugin {
             locationMap.put("plane", playerLocation.getPlane());
             observation.put("player_location", locationMap);
         } else {
+            observation.put("player_animation", -1); // Default if no localPlayer
             observation.put("player_location", null);
             // If localPlayer is null, other player-dependent observations will be empty or default.
         }
@@ -117,7 +119,7 @@ public class AIBridgePlugin extends Plugin {
                     Map<String, Object> itemData = new HashMap<>();
                     itemData.put("id", item.getId());
                     itemData.put("quantity", item.getQuantity());
-                    ItemComposition itemDef = client.getItemComposition(item.getId());
+                    ItemComposition itemDef = client.getItemDefinition(item.getId());
                     itemData.put("name", itemDef != null ? itemDef.getName() : "Unknown");
                     inventoryItems.add(itemData);
                 }
@@ -139,17 +141,17 @@ public class AIBridgePlugin extends Plugin {
                         List<TileItem> itemsOnTile = tile.getGroundItems();
                         if (itemsOnTile != null) {
                             for (TileItem item : itemsOnTile) {
-                                if (item != null && item.getTile().getWorldLocation().distanceTo(playerPos) <= range) {
+                                if (item != null && tile.getWorldLocation().distanceTo(playerPos) <= range) {
                                     Map<String, Object> itemData = new HashMap<>();
                                     itemData.put("id", item.getId());
                                     itemData.put("quantity", item.getQuantity());
-                                    WorldPoint itemWp = item.getTile().getWorldLocation();
+                                    WorldPoint itemWp = tile.getWorldLocation();
                                     Map<String, Integer> itemLocationMap = new HashMap<>();
                                     itemLocationMap.put("x", itemWp.getX());
                                     itemLocationMap.put("y", itemWp.getY());
                                     itemLocationMap.put("plane", itemWp.getPlane());
                                     itemData.put("location", itemLocationMap);
-                                    ItemComposition groundItemDef = client.getItemComposition(item.getId());
+                                    ItemComposition groundItemDef = client.getItemDefinition(item.getId());
                                     itemData.put("name", groundItemDef != null ? groundItemDef.getName() : "Unknown");
                                     groundItemsList.add(itemData);
                                 }
@@ -649,7 +651,7 @@ public class AIBridgePlugin extends Plugin {
             String action = "Take"; // Default action
             String targetName = targetItem.getName(); // May be null
             if (targetName == null || targetName.trim().isEmpty()) {
-                ItemComposition itemComp = client.getItemComposition(targetItem.getId());
+                ItemComposition itemComp = client.getItemDefinition(targetItem.getId());
                 if (itemComp != null) targetName = itemComp.getName();
             }
             if (targetName == null || targetName.trim().isEmpty()) targetName = "Item";
