@@ -1,0 +1,8 @@
+# Python Agent Dependencies for Microbot RL Training
+-r python_agent/requirements.txt
+
+# Additional development tools
+pytest
+black
+flake8
+jupyter 
