@@ -1,16 +1,56 @@
 import zmq
 import json
 import time
+from monitoring import record_error, get_metrics_collector
 
 class ZMQClient:
     def __init__(self, host="localhost", port=5555):
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.REQ)
-        self.socket.connect(f"tcp://{host}:{port}")
-        # Set a timeout for receive operations (e.g., 5 seconds)
-        self.socket.setsockopt(zmq.RCVTIMEO, 5000)
-        self.socket.setsockopt(zmq.LINGER, 0) # Don't wait for unsent messages on close
+        self.host = host
+        self.port = port
+        self.context = None
+        self.socket = None
+        self.connected = False
+        self.connection_attempts = 0
+        self.last_successful_communication = 0
+        self.metrics = get_metrics_collector()
+        
+        self._initialize_connection()
 
+    def _initialize_connection(self):
+        """Initialize ZMQ connection with error handling."""
+        try:
+            self.context = zmq.Context()
+            self.socket = self.context.socket(zmq.REQ)
+            self.socket.connect(f"tcp://{self.host}:{self.port}")
+            # Set a timeout for receive operations (e.g., 5 seconds)
+            self.socket.setsockopt(zmq.RCVTIMEO, 5000)
+            self.socket.setsockopt(zmq.LINGER, 0) # Don't wait for unsent messages on close
+            self.connected = True
+            self.connection_attempts += 1
+            print(f"ZMQ Client connected to tcp://{self.host}:{self.port}")
+        except Exception as e:
+            self.connected = False
+            record_error("ZMQ_INIT_ERROR", f"Failed to initialize ZMQ connection: {str(e)}")
+            raise
+
+    def _reconnect(self):
+        """Attempt to reconnect if connection is lost."""
+        if self.connected:
+            return True
+            
+        try:
+            if self.socket:
+                self.socket.close()
+            if self.context:
+                self.context.term()
+            
+            time.sleep(1)  # Brief delay before reconnect
+            self._initialize_connection()
+            return True
+        except Exception as e:
+            record_error("ZMQ_RECONNECT_ERROR", f"Failed to reconnect: {str(e)}")
+            self.metrics.record_connection_failure()
+            return False
 
     def send_command(self, command_type, params=None):
         message = {"command_type": command_type}
@@ -29,30 +69,59 @@ class ZMQClient:
         else:
             raise ValueError(f"Unknown command_type for ZMQClient: {command_type}")
 
+        # Track communication timing
+        start_time = time.time()
+        
         try:
+            # Ensure we're connected
+            if not self.connected:
+                if not self._reconnect():
+                    return {"status": "error", "message": "Connection failed"}
+            
             # print(f"Sending: {raw_message}") # For debugging
             self.socket.send_string(raw_message)
             response_bytes = self.socket.recv()
             response_str = response_bytes.decode('utf-8')
+            
+            # Record successful communication
+            self.last_successful_communication = time.time()
+            communication_time_ms = (self.last_successful_communication - start_time) * 1000
+            
             # print(f"Received: {response_str}") # For debugging
             try:
-                return json.loads(response_str)
+                response = json.loads(response_str)
+                
+                # Log performance for observations
+                if command_type == "get_observation":
+                    self.metrics.record_observation_time(communication_time_ms)
+                elif command_type == "execute_action":
+                    self.metrics.record_action_time(communication_time_ms)
+                
+                return response
             except json.JSONDecodeError as e:
                 error_msg = f"Failed to decode JSON response: {response_str}. Error: {e}"
                 print(error_msg)
+                record_error("ZMQ_JSON_DECODE_ERROR", error_msg, {"raw_response": response_str})
                 return {"status": "error", "message": error_msg, "raw_response": response_str}
+                
         except zmq.error.Again: # Timeout
             error_msg = f"Timeout waiting for ZMQ response to command: {raw_message}"
             print(error_msg)
+            record_error("ZMQ_TIMEOUT", error_msg, {"command": raw_message})
+            self.connected = False  # Mark as disconnected on timeout
             # Consider logging this to a file as well if it becomes frequent
             return {"status": "error", "message": "ZMQ timeout"}
         except zmq.error.ZMQError as e: # Other ZMQ errors
             error_msg = f"ZMQError during communication for command {raw_message}: {e}"
             print(error_msg)
+            record_error("ZMQ_ERROR", error_msg, {"command": raw_message})
+            self.connected = False  # Mark as disconnected on ZMQ error
             return {"status": "error", "message": error_msg}
         except Exception as e: # Other unexpected errors
             error_msg = f"Unexpected error during ZMQ communication for command {raw_message}: {e}"
             print(error_msg)
+            record_error("ZMQ_UNEXPECTED_ERROR", error_msg, {"command": raw_message})
+            self.connected = False  # Mark as disconnected on unexpected error
             return {"status": "error", "message": error_msg}
 
     def get_observation(self):
@@ -63,9 +132,38 @@ class ZMQClient:
         action_payload = {"action_type": action_type, "parameters": parameters}
         return self.send_command("execute_action", params=action_payload)
 
+    def is_connected(self):
+        """Check if the client is currently connected."""
+        if not self.connected:
+            return False
+        
+        # Check if communication is recent (within last 30 seconds)
+        current_time = time.time()
+        if current_time - self.last_successful_communication > 30:
+            return False
+        
+        return True
+
+    def get_connection_stats(self):
+        """Get connection statistics for monitoring."""
+        return {
+            "connected": self.connected,
+            "connection_attempts": self.connection_attempts,
+            "last_successful_communication": self.last_successful_communication,
+            "host": self.host,
+            "port": self.port
+        }
+
     def close(self):
-        self.socket.close()
-        self.context.term()
+        try:
+            if self.socket:
+                self.socket.close()
+            if self.context:
+                self.context.term()
+            self.connected = False
+            print("ZMQ Client connection closed")
+        except Exception as e:
+            record_error("ZMQ_CLOSE_ERROR", f"Error closing ZMQ connection: {str(e)}")
 
 if __name__ == '__main__':
     client = ZMQClient()
@@ -87,6 +185,8 @@ if __name__ == '__main__':
         action_result_type = client.execute_action("type_string", {"text": "Hello from Python AI!"})
         print(f"Action Result: {action_result_type}")
 
+        # Print connection stats
+        print("Connection Stats:", client.get_connection_stats())
 
     finally:
         client.close()

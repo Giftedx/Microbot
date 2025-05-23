@@ -5,6 +5,7 @@ import json
 import time # Keep if used in __main__
 
 from zmq_client import ZMQClient
+from monitoring import get_metrics_collector, record_error
 
 MAX_NEARBY_NPCS = 3
 MAX_INVENTORY_ITEMS = 5
@@ -32,6 +33,13 @@ class CustomGameEnv(gym.Env):
     def __init__(self, render_mode=None):
         super().__init__()
         self.client = ZMQClient()
+        
+        # Initialize monitoring
+        self.metrics = get_metrics_collector()
+        self.current_episode = 0
+        self.current_step = 0
+        self.episode_start_time = time.time()
+        self.cumulative_reward = 0.0
 
         # Action Space: 0:ATTACK_NPC, 1:EAT_FOOD, 2:MOVE_TO_GOBLIN_AREA, 3:NOOP
         self.action_space = spaces.Discrete(4) 
@@ -57,7 +65,19 @@ class CustomGameEnv(gym.Env):
 
 
     def _get_obs(self):
-        raw_obs_data = self.client.get_observation()
+        # Track observation timing for monitoring
+        obs_start_time = time.time()
+        
+        try:
+            raw_obs_data = self.client.get_observation()
+            
+            # Record observation latency
+            obs_latency_ms = (time.time() - obs_start_time) * 1000
+            self.metrics.record_observation_time(obs_latency_ms)
+            
+        except Exception as e:
+            record_error("OBSERVATION_ERROR", f"Failed to get observation: {str(e)}")
+            raw_obs_data = {"status": "error", "message": str(e)}
         
         obs = {
             "player_stats": np.zeros(self.observation_space["player_stats"].shape, dtype=np.float32),
@@ -80,6 +100,7 @@ class CustomGameEnv(gym.Env):
             if raw_obs_data and 'message' in raw_obs_data:
                 error_msg = raw_obs_data['message']
             print(f"Warning: Error or no data in received observation: {error_msg}. Using default observation.")
+            record_error("OBSERVATION_PARSE_ERROR", error_msg)
             # self._current_game_info will still contain the raw_obs_data if it exists
             return obs # Return the default initialized obs
 
@@ -115,6 +136,7 @@ class CustomGameEnv(gym.Env):
                     self._current_game_info["npc_names"][i] = npc.get("name", "Unknown")
                 else:
                     print(f"Warning: NPC data at index {i} is not a dictionary: {npc}")
+                    record_error("OBSERVATION_FORMAT_ERROR", f"Invalid NPC data at index {i}")
             
             # Inventory Items - now includes names in info
             inventory_data = raw_obs_data.get("inventory", [])
@@ -125,6 +147,7 @@ class CustomGameEnv(gym.Env):
                     self._current_game_info["inventory_item_names"][i] = item.get("name", "Unknown")
                 else:
                     print(f"Warning: Inventory item data at index {i} is not a dictionary: {item}")
+                    record_error("OBSERVATION_FORMAT_ERROR", f"Invalid inventory data at index {i}")
 
             # Nearby Ground Items - now includes names in info
             ground_items_data = raw_obs_data.get("nearby_ground_items", [])
@@ -140,13 +163,18 @@ class CustomGameEnv(gym.Env):
                     self._current_game_info["ground_item_names"][i] = g_item.get("name", "Unknown")
                 else:
                     print(f"Warning: Ground item data at index {i} is not a dictionary: {g_item}")
+                    record_error("OBSERVATION_FORMAT_ERROR", f"Invalid ground item data at index {i}")
         
         except (TypeError, ValueError) as e:
-            print(f"Warning: Type or value error while processing observation data: {e}. Raw data: {raw_obs_data}. Using partially processed/default observation.")
+            error_msg = f"Type or value error while processing observation data: {e}"
+            print(f"Warning: {error_msg}. Raw data: {raw_obs_data}. Using partially processed/default observation.")
+            record_error("OBSERVATION_PARSE_ERROR", error_msg, {"raw_data": str(raw_obs_data)})
             # Ensure player_animation also has a default if error occurs mid-parse
             obs["player_animation"][0] = -1
         except Exception as e:
-            print(f"Warning: Unexpected error while processing observation data: {e}. Raw data: {raw_obs_data}. Using partially processed/default observation.")
+            error_msg = f"Unexpected error while processing observation data: {e}"
+            print(f"Warning: {error_msg}. Raw data: {raw_obs_data}. Using partially processed/default observation.")
+            record_error("OBSERVATION_UNEXPECTED_ERROR", error_msg, {"raw_data": str(raw_obs_data)})
             obs["player_animation"][0] = -1
             
         return obs
@@ -168,17 +196,34 @@ class CustomGameEnv(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         print("Environment reset.")
+        
+        # Update episode tracking
+        self.current_episode += 1
+        self.current_step = 0
+        self.episode_start_time = time.time()
+        self.cumulative_reward = 0.0
+        
+        # Get initial observation
         initial_observation = self._get_obs() 
         self._update_combat_state_from_obs(initial_observation) # Call the new method
         self.last_observation = initial_observation
         info = self._get_info() 
+        
+        # Record frame timing
+        frame_time_ms = (time.time() - self.episode_start_time) * 1000
+        self.metrics.record_frame_time(frame_time_ms)
+        
         return initial_observation, info
 
     def step(self, action):
+        step_start_time = time.time()
+        action_start_time = time.time()
+        
         base_action_cost = -0.1 # Default cost for taking a step
         action_type = None
         parameters = {}
         action_specific_reward_info = {} # To pass data to reward function
+        action_success = False
 
         # --- Action Selection and Parameter Generation ---
         if action == 0: # ATTACK_NPC
@@ -198,39 +243,74 @@ class CustomGameEnv(gym.Env):
             print(f"Env Action: NOOP")
         else:
             print(f"Unknown action discrete value: {action}")
-            action_specific_reward_info = {"action_taken": "unknown"}
-        
-        # --- Execute Action via ZMQ ---
-        action_status = {"status": "no_action_taken"}
+            record_error("INVALID_ACTION", f"Unknown action value: {action}")
+
+        # --- Execute Action ---
+        action_status = {"status": "not_executed"}
         if action_type:
-            action_status = self.client.execute_action(action_type, parameters)
-            print(f"Action result from server: {action_status}")
-        
-        # --- Get New Observation and Info ---
-        current_observation = self._get_obs() 
-        self._update_combat_state_from_obs(current_observation) # Call the new method
-        self.last_observation = current_observation 
-        info = self._get_info() 
-        info["action_status"] = action_status
-        info.update(action_specific_reward_info) # Add info from action handling
+            try:
+                action_result = self.client.execute_action(action_type, parameters)
+                action_status = action_result if action_result else {"status": "no_response"}
+                action_success = action_status.get("status") == "submitted"
+                
+                # Record action latency
+                action_latency_ms = (time.time() - action_start_time) * 1000
+                self.metrics.record_action_time(action_latency_ms)
+                
+            except Exception as e:
+                record_error("ACTION_EXECUTION_ERROR", f"Failed to execute {action_type}: {str(e)}")
+                action_status = {"status": "error", "message": str(e)}
+
+        # --- Get New State ---
+        current_obs = self._get_obs()
+        self._update_combat_state_from_obs(current_obs)
 
         # --- Calculate Reward ---
         reward = self._calculate_reward(base_action_cost, action_specific_reward_info, 
-                                        self.last_observation, current_observation, 
-                                        action_status, action)
+                                      self.last_observation, current_obs, action_status, 
+                                      action_specific_reward_info.get("action_taken", "unknown"))
         
-        # --- Update State ---
-        # self.last_observation is already updated above
-        # self.player_is_in_combat_animation is already updated above
+        # Update cumulative reward and step counter
+        self.cumulative_reward += reward
+        self.current_step += 1
 
-        terminated = False # Placeholder for death condition
-        if current_observation["player_stats"][0] <= 0: # current_health
-             terminated = True
-             print("Player died. Episode terminated.")
+        terminated = False # You can implement episode termination logic here
+        truncated = False  # You can implement episode truncation logic here
+
+        # Get game state info for monitoring
+        player_health = current_obs["player_stats"][0] if current_obs["player_stats"][0] > 0 else 1
+        player_max_health = current_obs["player_stats"][1] if current_obs["player_stats"][1] > 0 else 100
         
-        truncated = False # Placeholder for time limits, etc.
+        # Record comprehensive metrics
+        self.metrics.record_metrics(
+            episode=self.current_episode,
+            step=self.current_step,
+            reward=reward,
+            cumulative_reward=self.cumulative_reward,
+            player_health=player_health,
+            player_max_health=player_max_health,
+            action_taken=action_specific_reward_info.get("action_taken", "unknown"),
+            action_success=action_success,
+            game_state=self._current_game_info
+        )
         
-        return current_observation, reward, terminated, truncated, info
+        # Record frame timing
+        frame_time_ms = (time.time() - step_start_time) * 1000
+        self.metrics.record_frame_time(frame_time_ms)
+
+        # Update last observation for next iteration
+        self.last_observation = current_obs
+
+        info = self._get_info()
+        info.update({
+            "action_status": action_status,
+            "action_success": action_success,
+            "episode": self.current_episode,
+            "step": self.current_step,
+            "cumulative_reward": self.cumulative_reward
+        })
+
+        return current_obs, reward, terminated, truncated, info
 
     # In class CustomGameEnv (ensure these are methods of the class):
     def _handle_attack_npc(self, last_observation):
